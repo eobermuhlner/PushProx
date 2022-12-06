@@ -44,6 +44,28 @@ If the target must be scraped over SSL/TLS, add:
 rather than the usual `scheme: https`. Only the default `scheme: http` works with the proxy,
 so this workaround is required.
 
+### Avoiding local IP address collisions
+
+The client is often on a private network with a local IP address.
+To avoid potential collisions of the local IP addresses the client can distinguish the local fqdn from the public fqdn.
+
+The following snippets show an example with a local address 10.0.0.1 published as `client`.
+
+```
+./pushprox-client --proxy-url=http://proxy:8080/ --local-fqdn=10.0.0.1 --fqdn=client
+```
+
+In Prometheus, use the public fqdn in the target:
+
+```
+scrape_configs:
+- job_name: node
+  proxy_url: http://proxy:8080/
+  static_configs:
+    - targets: ['client:9100']
+```
+
+
 ## Service Discovery
 
 The `/clients` endpoint will return a list of all registered clients in the format
