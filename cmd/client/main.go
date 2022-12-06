@@ -44,6 +44,7 @@ import (
 
 var (
 	myFqdn      = kingpin.Flag("fqdn", "FQDN to register with").Default(fqdn.Get()).String()
+	myLocalFqdn = kingpin.Flag("local-fqdn", "Local FQDN to forward requests to").Default("").String()
 	proxyURL    = kingpin.Flag("proxy-url", "Push proxy to talk to.").Required().String()
 	caCertFile  = kingpin.Flag("tls.cacert", "<file> CA certificate to verify peer against").String()
 	tlsCert     = kingpin.Flag("tls.cert", "<cert> Client certificate file").String()
@@ -131,6 +132,16 @@ func (c *Coordinator) doScrape(request *http.Request, client *http.Client) {
 	if request.URL.Hostname() != *myFqdn {
 		c.handleErr(request, client, errors.New("scrape target doesn't match client fqdn"))
 		return
+	}
+
+	if *myLocalFqdn != "" {
+		level.Info(c.logger).Log("msg", "Request host:", "host", request.URL.Host)
+		if request.URL.Port() == "" {
+			request.URL.Host = *myLocalFqdn
+		} else {
+			request.URL.Host = *myLocalFqdn + ":" + request.URL.Port()
+		}
+		level.Info(c.logger).Log("msg", "Local host:", "host", request.URL.Host)
 	}
 
 	scrapeResp, err := client.Do(request)
